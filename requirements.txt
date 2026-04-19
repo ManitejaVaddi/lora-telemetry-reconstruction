@@ -1,1 +1,1 @@
-python-3.10
+# No external dependencies - uses only Python standard library

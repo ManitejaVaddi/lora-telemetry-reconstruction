@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Predictive LoRa Telemetry Reconstruction</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="eyebrow">Intelligence Middleware Prototype</div>
+        <h1>Predictive Reconstruction of Fragmented LoRa Telemetry</h1>
+        <p class="lede">
+          Broken packets are repaired, missing coordinates are estimated, and inferred movement stays visible
+          without being confused with verified telemetry.
+        </p>
+        <div class="actions">
+          <button id="load-demo">Load Demo Stream</button>
+          <button id="clear-view" class="secondary">Clear</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Reconstruction Logic</h2>
+          <p>How prediction works: Uses last 2 points for linear interpolation and velocity-based estimation. Blends with lightweight Kalman-inspired smoothing.</p>
+        </div>
+        <div class="logic-steps">
+          <div class="step">
+            <h3>1. Packet Integrity Check</h3>
+            <p>Detects broken JSON (missing headers/footers) or NMEA checksum failures. Flags as fragmented.</p>
+          </div>
+          <div class="step">
+            <h3>2. Historical Buffer Analysis</h3>
+            <p>Analyzes node's previous velocity, heading, and pattern of life from last 10 valid packets.</p>
+          </div>
+          <div class="step">
+            <h3>3. Predictive Estimation</h3>
+            <p>Formula: Position(t) = Position(t-1) + Velocity * Δt, adjusted by heading. Kalman filter smooths noise.</p>
+          </div>
+          <div class="step">
+            <h3>4. Confidence Scoring</h3>
+            <p>Confidence = 0.35 + history_depth * 0.1 - time_gap * 0.01. Ranges 0.15-0.92.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Track View</h2>
+          <p>Blue points are verified. Amber points are estimated or fragmented.</p>
+        </div>
+        <div class="control-row">
+          <label class="control">
+            <span>Search</span>
+            <input id="search-input" type="search" placeholder="Search node, source, status, or note" />
+          </label>
+          <label class="control">
+            <span>Timeline</span>
+            <select id="timeline-filter">
+              <option value="all">All Data</option>
+              <option value="24h">Last 24h</option>
+              <option value="7d">Last 7 days</option>
+            </select>
+          </label>
+          <label class="toggle">
+            <input id="cluster-toggle" type="checkbox" checked />
+            <span>Cluster Nearby Points</span>
+          </label>
+          <label class="toggle">
+            <input id="show-predicted-toggle" type="checkbox" checked />
+            <span>Show Estimated</span>
+          </label>
+          <label class="control">
+            <span>Min Confidence</span>
+            <input id="confidence-filter" type="range" min="0" max="1" step="0.1" value="0" />
+          </label>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="dot verified"></span> Verified</div>
+          <div class="legend-item"><span class="dot estimated"></span> Estimated</div>
+          <div class="legend-item"><span class="dot fragmented"></span> Fragmented</div>
+        </div>
+        <div id="map" class="map" aria-label="Telemetry map"></div>
+      </section>
+
+      <section class="panel split">
+        <div>
+          <div class="panel-header">
+            <h2>Packet Ingestion</h2>
+            <p>Paste a raw packet and send it through the middleware.</p>
+          </div>
+          <textarea id="packet-input" spellcheck="false">{&quot;node_id&quot;:&quot;alpha-1&quot;,&quot;timestamp&quot;:&quot;2026-04-18T10:01:00Z&quot;,&quot;speed_mps&quot;:4.1,&quot;heading_deg&quot;:90}</textarea>
+          <button id="send-packet">POST /ingest</button>
+        </div>
+        <div>
+          <div class="panel-header">
+            <h2>Latest Output</h2>
+            <p>Dashboard-ready payload from the reconstruction layer.</p>
+          </div>
+          <pre id="payload-output">No packet processed yet.</pre>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Event Log</h2>
+          <p>Useful for demos and interviews.</p>
+        </div>
+        <div id="log" class="log"></div>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -96,6 +96,3 @@ POST /ingest
 }
 ```
 
-## Good next step if you want to extend it
-
-Hook `ingest()` to your LoRa gateway consumer and forward the returned payload directly to your frontend map layer or websocket stream.
